@@ -13,8 +13,9 @@ struct HomeView<ViewModel>: View where ViewModel: HomeViewModeling {
     
     var body: some View {
         NavigationView {
-            VStack(spacing: 0) {
+            VStack(spacing: 8) {
                 searchBarView
+                actionButtonsView
                 switch viewModel.viewState {
                 case .loading:
                     loadingView
@@ -26,25 +27,78 @@ struct HomeView<ViewModel>: View where ViewModel: HomeViewModeling {
                     emptyMoviesView
                 }
             }
-            .background(Color(.systemBackground))
-            .ignoresSafeArea(.all)
+            .background(.black)
+            .ignoresSafeArea(.keyboard)
         }
+        .background(.black)
+    }
+    
+    private var actionButtonsView: some View {
+        HStack(spacing: 8) {
+            sortButtonView
+            resetButton
+        }
+        .disabled(viewModel.isLoadingMore)
+    }
+    
+    private var resetButton: some View {
+        Button(action: {
+            viewModel.loadFullMovies()
+        }, label: {
+            Text("Reset")
+                .padding(20)
+                .frame(maxWidth: .infinity)
+                .foregroundColor(.white)
+                .background(.gray)
+                .cornerRadius(14)
+        })
+    }
+    
+    private var sortButtonView: some View {
+        Button(action: {
+            viewModel.sortByYear()
+        }, label: {
+            Text(viewModel.defaultSortCriteria.displayName)
+                .padding(20)
+                .frame(maxWidth: .infinity)
+                .foregroundColor(.white)
+                .background(.gray)
+                .cornerRadius(14)
+        })
     }
     
     private var contentMoviesView: some View {
-        List {
+        ScrollView {
             ForEach(viewModel.moviesFiltered) { movie in
                 MovieRowView(movie: movie)
-                    .listRowBackground(Color(.systemGray6))
+                    .listRowSeparatorTint(.clear)
+                    .background(.black)
+                    .overlay {
+                        RoundedRectangle(cornerRadius: 12)
+                            .stroke(.white, lineWidth: 1)
+                    }
                     .onAppear(perform: {
                         if movie.imdbID == viewModel.moviesFiltered.last?.imdbID {
                             viewModel.loadMoreMovies()
                         }
                     })
             }
+            if viewModel.isLoadingMore {
+                HStack {
+                    Spacer()
+                    ProgressView()
+                        .scaleEffect(0.8)
+                        .progressViewStyle(CircularProgressViewStyle(tint: .white))
+                    Text("Loading more...")
+                        .font(.caption)
+                        .foregroundStyle(.gray)
+                    Spacer()
+                }
+            }
         }
+        .scrollContentBackground(.hidden)
         .listStyle(PlainListStyle())
-        .background(Color(.systemBackground))
+        .background(.black)
     }
     
     private var errorView: some View {
@@ -102,6 +156,7 @@ struct HomeView<ViewModel>: View where ViewModel: HomeViewModeling {
                 TextField("Search Movies...", text: $viewModel.searchText)
                     .textFieldStyle(PlainTextFieldStyle())
                     .focused($isFocused)
+                    .foregroundStyle(.white)
                     .disableAutocorrection(true)
                     .textInputAutocapitalization(.none)
                     .onChange(of: viewModel.searchText) { newValue in

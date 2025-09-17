@@ -12,6 +12,7 @@ protocol HomeViewModeling: ObservableObject {
     var isLoadingMore: Bool { get }
     var searchText: String { get set }
     var moviesFiltered: [Movie] { get }
+    var defaultSortCriteria: SortCriteria { get }
     var viewState: HomeViewModel.HomeViewState { get }
     
     func searchMovies()
@@ -19,6 +20,7 @@ protocol HomeViewModeling: ObservableObject {
     func loadFullMovies()
     func loadMoreMovies()
     func executeCurrentService()
+    func sortByYear()
 }
 
 final class HomeViewModel: HomeViewModeling {
@@ -41,9 +43,11 @@ final class HomeViewModel: HomeViewModeling {
     @Published var moviesFiltered: [Movie] = []
     @Published var viewState: HomeViewState = .loading
     @Published var searchCriteria: SearchCriteria = .allMovies
+    @Published var defaultSortCriteria: SortCriteria = .ascending
     
     private var currentPage: Int = 1
     private var canLoadMorePages = true
+    private var currentTask: Task<Void, Never>?
     private let networkService: MovieAPIServiceProtocol
     
     init(networkService: MovieAPIServiceProtocol = MovieAPIService()) {
@@ -52,10 +56,12 @@ final class HomeViewModel: HomeViewModeling {
     }
     
     func loadFullMovies() {
-        Task {
-            await MainActor.run {
-                searchCriteria = .allMovies
-                viewState = .loading
+        currentTask?.cancel()
+        currentTask = Task {
+            await MainActor.run { [weak self] in
+                self?.updateViewState(.loading)
+                self?.currentPage = 1
+                self?.searchCriteria = .allMovies
             }
             do {
                 let response = try await networkService.fetchMovies(page: currentPage,
@@ -66,16 +72,17 @@ final class HomeViewModel: HomeViewModeling {
                     response.data.isEmpty ? self?.updateViewState(.empty) : self?.updateViewState(.content)
                 }
             } catch {
-                updateViewState(.error)
+                self.updateViewState(.error)
             }
         }
     }
     
     func loadMoreMovies() {
-        Task {
+        currentTask?.cancel()
+        currentTask = Task {
             if canLoadMorePages && !isLoadingMore {
-                await MainActor.run {
-                    isLoadingMore = true
+                await MainActor.run { [weak self] in
+                    self?.isLoadingMore = true
                 }
                 do {
                     let nextPage = currentPage + 1
@@ -90,7 +97,7 @@ final class HomeViewModel: HomeViewModeling {
                             self?.isLoadingMore = false
                             self?.movies.append(contentsOf: response.data)
                         }
-                    case .searchByTitle(let string):
+                    case .searchByTitle(_):
                         response = try await networkService.fetchMovies(page: nextPage, parameters: ["Title": "\(searchText)"])
                         await MainActor.run { [weak self] in
                             self?.currentPage = nextPage
@@ -100,7 +107,8 @@ final class HomeViewModel: HomeViewModeling {
                         }
                     }
                 } catch {
-                    
+                    self.isLoadingMore = false
+                    self.updateViewState(.error)
                 }
             }
         }
@@ -115,7 +123,8 @@ final class HomeViewModel: HomeViewModeling {
     }
     
     func performNewSearch() {
-        Task {
+        currentTask?.cancel()
+        currentTask = Task {
             await MainActor.run { [weak self] in
                 self?.viewState = .loading
                 self?.currentPage = 1
@@ -154,5 +163,16 @@ final class HomeViewModel: HomeViewModeling {
     }
     
     func closeTextField() { searchText = "" }
+    
+    func sortByYear() {
+        if !isLoadingMore {
+            switch defaultSortCriteria {
+            case .ascending:
+                moviesFiltered.sort { $0.year < $1.year }
+            case .descending:
+                moviesFiltered.sort { $0.year > $1.year }
+            }
+            defaultSortCriteria.toggle()
+        }
+    }
 }
-

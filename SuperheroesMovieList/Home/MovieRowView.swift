@@ -11,7 +11,7 @@ struct MovieRowView: View {
     let movie: Movie
     
     var body: some View {
-        VStack(alignment: .leading, spacing: 8) {
+        VStack(alignment: .leading, spacing: 16) {
             Text(movie.title)
                 .font(.headline)
                 .fontWeight(.semibold)
@@ -22,27 +22,26 @@ struct MovieRowView: View {
                 HStack(spacing: 4) {
                     Image(systemName: "calendar")
                         .font(.caption)
-                        .foregroundColor(.gray)
+                        .foregroundColor(.white)
                     Text("\(movie.year)")
                         .font(.subheadline)
-                        .foregroundColor(.gray)
+                        .foregroundColor(.white)
                 }
                 Spacer()
                 HStack(spacing: 4) {
                     Image(systemName: "clock")
                         .font(.caption)
-                        .foregroundColor(.gray)
+                        .foregroundColor(.white)
                     Text("ID: \(movie.imdbID)")
                         .font(.caption)
-                        .foregroundColor(.gray)
+                        .foregroundColor(.white)
                 }
             }
         }
-        .padding(.vertical, 12)
         .padding(.horizontal, 16)
-        .background(Color(.systemGray6))
+        .padding(.vertical, 12)
+        .background(.clear)
         .cornerRadius(12)
-        .padding(.horizontal, 20)
         .padding(.vertical, 4)
     }
 }
