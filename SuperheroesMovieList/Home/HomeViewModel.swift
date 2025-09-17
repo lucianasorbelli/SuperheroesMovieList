@@ -15,7 +15,8 @@ protocol HomeViewModeling: ObservableObject {
     var viewState: HomeViewModel.HomeViewState { get }
     
     func closeTextField()
-    func searchMovies(title: String)
+    func searchMovies() async
+    func loadFullMovies() async
 }
 
 final class HomeViewModel: HomeViewModeling {
@@ -45,9 +46,8 @@ final class HomeViewModel: HomeViewModeling {
             moviesFiltered = movies
         }
     }
-    @Published var searchText: String = "" {
-        didSet { searchTextDidChange() }
-    }
+    
+    @Published var searchText: String = ""
     @Published var isLoadingMore: Bool = false
     @Published var moviesFiltered: [Movie] = []
     @Published var viewState: HomeViewState = .loading
@@ -59,11 +59,11 @@ final class HomeViewModel: HomeViewModeling {
     init(networkService: MovieAPIServiceProtocol = MovieAPIService()) {
         self.networkService = networkService
         Task {
-            await loadMovies()
+            await loadFullMovies()
         }
     }
     
-    func loadMovies() async {
+    func loadFullMovies() async {
         await MainActor.run {
             searchCriteria = .allMovies
             viewState = .loading
@@ -71,23 +71,48 @@ final class HomeViewModel: HomeViewModeling {
         do {
             let response = try await networkService.fetchMovies(page: currentPage,
                                                                 parameters: searchCriteria.parameters)
-            
-            await MainActor.run {
-                movies = response.data
-                response.data.isEmpty ? ( viewState = .empty ) : ( viewState = .content )
+            await MainActor.run { [weak self] in
+                self?.movies = response.data
+                response.data.isEmpty ? self?.updateViewState(.empty) : self?.updateViewState(.content)
             }
         } catch {
-            
+            updateViewState(.error)
+        }
+    }
+    
+    private func updateViewState(_ newState: HomeViewState) {
+        Task {
+            await MainActor.run { [weak self] in
+                self?.viewState = newState
+            }
+        }
+    }
+    
+    func performNewSearch() async {
+        await MainActor.run { [weak self] in
+            self?.viewState = .loading
+            self?.currentPage = 1
+            self?.moviesFiltered = []
+            self?.searchCriteria = .searchByTitle(self?.searchText ?? "")
         }
         
+        do {
+            let response = try await networkService.searhMovies(title: searchText)
+            await MainActor.run { [weak self] in
+                self?.moviesFiltered = response.data
+                response.data.isEmpty ? self?.updateViewState(.empty) : self?.updateViewState(.content)
+            }
+        } catch let error {
+            updateViewState(.error)
+        }
     }
     
-    private func searchTextDidChange() {
-        
-    }
-    
-    func searchMovies(title: String) {
-        
+    func searchMovies() async {
+        if searchText.isEmpty {
+            await loadFullMovies()
+        } else if searchText.count >= 3 {
+            await performNewSearch()
+        }
     }
     
     func closeTextField() {

@@ -67,7 +67,7 @@ struct HomeView<ViewModel>: View where ViewModel: HomeViewModeling {
                     .textInputAutocapitalization(.none)
                     .onChange(of: viewModel.searchText) { newValue in
                         Task {
-                            await viewModel.searchMovies(title: newValue)
+                            await viewModel.searchMovies()
                         }
                     }
                 if !viewModel.searchText.isEmpty {
