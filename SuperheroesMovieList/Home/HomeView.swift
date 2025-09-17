@@ -35,6 +35,11 @@ struct HomeView<ViewModel>: View where ViewModel: HomeViewModeling {
             ForEach(viewModel.moviesFiltered) { movie in
                 MovieRowView(movie: movie)
                     .listRowBackground(Color(.systemGray6))
+                    .onAppear(perform: {
+                        if movie.imdbID == viewModel.moviesFiltered.last?.imdbID {
+                            viewModel.loadMoreMovies()
+                        }
+                    })
             }
         }
         .listStyle(PlainListStyle())

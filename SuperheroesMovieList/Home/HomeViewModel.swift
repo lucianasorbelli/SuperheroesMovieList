@@ -17,6 +17,7 @@ protocol HomeViewModeling: ObservableObject {
     func searchMovies()
     func closeTextField()
     func loadFullMovies()
+    func loadMoreMovies()
     func executeCurrentService()
 }
 
@@ -42,6 +43,7 @@ final class HomeViewModel: HomeViewModeling {
     @Published var searchCriteria: SearchCriteria = .allMovies
     
     private var currentPage: Int = 1
+    private var canLoadMorePages = true
     private let networkService: MovieAPIServiceProtocol
     
     init(networkService: MovieAPIServiceProtocol = MovieAPIService()) {
@@ -60,10 +62,46 @@ final class HomeViewModel: HomeViewModeling {
                                                                     parameters: searchCriteria.parameters)
                 await MainActor.run { [weak self] in
                     self?.movies = response.data
+                    self?.canLoadMorePages = self?.currentPage ?? 1 < response.totalPages
                     response.data.isEmpty ? self?.updateViewState(.empty) : self?.updateViewState(.content)
                 }
             } catch {
                 updateViewState(.error)
+            }
+        }
+    }
+    
+    func loadMoreMovies() {
+        Task {
+            if canLoadMorePages && !isLoadingMore {
+                await MainActor.run {
+                    isLoadingMore = true
+                }
+                do {
+                    let nextPage = currentPage + 1
+                    let response: MovieResponseDTO
+                    
+                    switch searchCriteria {
+                    case .allMovies:
+                        response = try await networkService.fetchMovies(page: nextPage, parameters: searchCriteria.parameters)
+                        await MainActor.run { [weak self] in
+                            self?.currentPage = nextPage
+                            self?.canLoadMorePages = nextPage < response.totalPages
+                            self?.isLoadingMore = false
+                            self?.movies.append(contentsOf: response.data)
+                        }
+                    case .searchByTitle(let string):
+                        response = try await networkService.fetchMovies(page: nextPage, parameters: ["Title": "\(searchText)"])
+                        await MainActor.run { [weak self] in
+                            self?.currentPage = nextPage
+                            self?.canLoadMorePages = nextPage < response.totalPages
+                            self?.isLoadingMore = false
+                            self?.moviesFiltered.append(contentsOf: response.data)
+                        }
+                    }
+                } catch {
+                    
+                }
             }
         }
     }
@@ -89,6 +127,7 @@ final class HomeViewModel: HomeViewModeling {
                 let response = try await networkService.searhMovies(title: searchText)
                 await MainActor.run { [weak self] in
                     self?.moviesFiltered = response.data
+                    self?.canLoadMorePages = self?.currentPage ?? 1 < response.totalPages
                     response.data.isEmpty ? self?.updateViewState(.empty) : self?.updateViewState(.content)
                 }
             } catch let error {
