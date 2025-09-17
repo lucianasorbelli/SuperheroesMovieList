@@ -19,11 +19,11 @@ struct HomeView<ViewModel>: View where ViewModel: HomeViewModeling {
                 case .loading:
                     loadingView
                 case .error:
-                    EmptyView()
+                    errorView
                 case .content:
                     contentMoviesView
                 case .empty:
-                    EmptyView()
+                    errorView
                 }
             }
             .background(Color(.systemBackground))
@@ -39,8 +39,21 @@ struct HomeView<ViewModel>: View where ViewModel: HomeViewModeling {
         }
         .listStyle(PlainListStyle())
         .background(Color(.systemBackground))
-        .refreshable {
-            
+    }
+    
+    private var errorView: some View {
+        VStack(alignment: .center) {
+            Text("Something went wrong")
+                .font(.title2)
+                .fontWeight(.heavy)
+            Text("Please try again")
+                .font(.title3)
+                .fontWeight(.light)
+            Button(action: {
+                viewModel.executeCurrentService()
+            }, label: {
+                Text("Reintentar")
+            })
         }
     }
     

@@ -14,25 +14,13 @@ protocol HomeViewModeling: ObservableObject {
     var moviesFiltered: [Movie] { get }
     var viewState: HomeViewModel.HomeViewState { get }
     
+    func searchMovies()
     func closeTextField()
-    func searchMovies() async
-    func loadFullMovies() async
+    func loadFullMovies()
+    func executeCurrentService()
 }
 
 final class HomeViewModel: HomeViewModeling {
-    
-    enum SearchCriteria {
-        case allMovies, searchByTitle(String)
-        
-        var parameters: [String: String] {
-            switch self {
-            case .allMovies:
-                return [:]
-            case .searchByTitle(let title):
-                return ["Title": title]
-            }
-        }
-    }
     
     enum HomeViewState {
         case loading
@@ -58,25 +46,25 @@ final class HomeViewModel: HomeViewModeling {
     
     init(networkService: MovieAPIServiceProtocol = MovieAPIService()) {
         self.networkService = networkService
-        Task {
-            await loadFullMovies()
-        }
+        loadFullMovies()
     }
     
-    func loadFullMovies() async {
-        await MainActor.run {
-            searchCriteria = .allMovies
-            viewState = .loading
-        }
-        do {
-            let response = try await networkService.fetchMovies(page: currentPage,
-                                                                parameters: searchCriteria.parameters)
-            await MainActor.run { [weak self] in
-                self?.movies = response.data
-                response.data.isEmpty ? self?.updateViewState(.empty) : self?.updateViewState(.content)
+    func loadFullMovies() {
+        Task {
+            await MainActor.run {
+                searchCriteria = .allMovies
+                viewState = .loading
             }
-        } catch {
-            updateViewState(.error)
+            do {
+                let response = try await networkService.fetchMovies(page: currentPage,
+                                                                    parameters: searchCriteria.parameters)
+                await MainActor.run { [weak self] in
+                    self?.movies = response.data
+                    response.data.isEmpty ? self?.updateViewState(.empty) : self?.updateViewState(.content)
+                }
+            } catch {
+                updateViewState(.error)
+            }
         }
     }
     
@@ -88,35 +76,44 @@ final class HomeViewModel: HomeViewModeling {
         }
     }
     
-    func performNewSearch() async {
-        await MainActor.run { [weak self] in
-            self?.viewState = .loading
-            self?.currentPage = 1
-            self?.moviesFiltered = []
-            self?.searchCriteria = .searchByTitle(self?.searchText ?? "")
-        }
-        
-        do {
-            let response = try await networkService.searhMovies(title: searchText)
+    func performNewSearch() {
+        Task {
             await MainActor.run { [weak self] in
-                self?.moviesFiltered = response.data
-                response.data.isEmpty ? self?.updateViewState(.empty) : self?.updateViewState(.content)
+                self?.viewState = .loading
+                self?.currentPage = 1
+                self?.moviesFiltered = []
+                self?.searchCriteria = .searchByTitle(self?.searchText ?? "")
             }
-        } catch let error {
-            updateViewState(.error)
+            
+            do {
+                let response = try await networkService.searhMovies(title: searchText)
+                await MainActor.run { [weak self] in
+                    self?.moviesFiltered = response.data
+                    response.data.isEmpty ? self?.updateViewState(.empty) : self?.updateViewState(.content)
+                }
+            } catch let error {
+                updateViewState(.error)
+            }
         }
     }
     
-    func searchMovies() async {
+    func searchMovies() {
         if searchText.isEmpty {
-            await loadFullMovies()
+            loadFullMovies()
         } else if searchText.count >= 3 {
-            await performNewSearch()
+            performNewSearch()
         }
     }
     
-    func closeTextField() {
-        
+    func executeCurrentService() {
+        switch searchCriteria {
+        case .allMovies:
+            loadFullMovies()
+        case .searchByTitle(_):
+            performNewSearch()
+        }
     }
+    
+    func closeTextField() { searchText = "" }
 }
 
