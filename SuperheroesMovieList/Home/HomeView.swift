@@ -23,10 +23,11 @@ struct HomeView<ViewModel>: View where ViewModel: HomeViewModeling {
                 case .content:
                     contentMoviesView
                 case .empty:
-                    errorView
+                    emptyMoviesView
                 }
             }
             .background(Color(.systemBackground))
+            .ignoresSafeArea(.all)
         }
     }
     
@@ -51,6 +52,7 @@ struct HomeView<ViewModel>: View where ViewModel: HomeViewModeling {
             Text("Something went wrong")
                 .font(.title2)
                 .fontWeight(.heavy)
+                .padding(.top, 30)
             Text("Please try again")
                 .font(.title3)
                 .fontWeight(.light)
@@ -59,6 +61,25 @@ struct HomeView<ViewModel>: View where ViewModel: HomeViewModeling {
             }, label: {
                 Text("Reintentar")
             })
+            Spacer()
+        }
+    }
+    
+    private var emptyMoviesView: some View {
+        VStack(alignment: .center) {
+            Text("Something went wrong")
+                .font(.title2)
+                .fontWeight(.heavy)
+                .padding(.top, 30)
+            Text("Please try again")
+                .font(.title3)
+                .fontWeight(.light)
+            Button(action: {
+                viewModel.executeCurrentService()
+            }, label: {
+                Text("Reintentar")
+            })
+            Spacer()
         }
     }
     
