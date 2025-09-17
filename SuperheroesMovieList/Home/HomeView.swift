@@ -19,14 +19,15 @@ struct HomeView<ViewModel>: View where ViewModel: HomeViewModeling {
                 case .loading:
                     loadingView
                 case .error:
-                    EmptyView()
+                    errorView
                 case .content:
                     contentMoviesView
                 case .empty:
-                    EmptyView()
+                    emptyMoviesView
                 }
             }
             .background(Color(.systemBackground))
+            .ignoresSafeArea(.all)
         }
     }
     
@@ -35,12 +36,50 @@ struct HomeView<ViewModel>: View where ViewModel: HomeViewModeling {
             ForEach(viewModel.moviesFiltered) { movie in
                 MovieRowView(movie: movie)
                     .listRowBackground(Color(.systemGray6))
+                    .onAppear(perform: {
+                        if movie.imdbID == viewModel.moviesFiltered.last?.imdbID {
+                            viewModel.loadMoreMovies()
+                        }
+                    })
             }
         }
         .listStyle(PlainListStyle())
         .background(Color(.systemBackground))
-        .refreshable {
-            
+    }
+    
+    private var errorView: some View {
+        VStack(alignment: .center) {
+            Text("Something went wrong")
+                .font(.title2)
+                .fontWeight(.heavy)
+                .padding(.top, 30)
+            Text("Please try again")
+                .font(.title3)
+                .fontWeight(.light)
+            Button(action: {
+                viewModel.executeCurrentService()
+            }, label: {
+                Text("Reintentar")
+            })
+            Spacer()
+        }
+    }
+    
+    private var emptyMoviesView: some View {
+        VStack(alignment: .center) {
+            Text("Something went wrong")
+                .font(.title2)
+                .fontWeight(.heavy)
+                .padding(.top, 30)
+            Text("Please try again")
+                .font(.title3)
+                .fontWeight(.light)
+            Button(action: {
+                viewModel.executeCurrentService()
+            }, label: {
+                Text("Reintentar")
+            })
+            Spacer()
         }
     }
     
@@ -67,7 +106,7 @@ struct HomeView<ViewModel>: View where ViewModel: HomeViewModeling {
                     .textInputAutocapitalization(.none)
                     .onChange(of: viewModel.searchText) { newValue in
                         Task {
-                            await viewModel.searchMovies(title: newValue)
+                            await viewModel.searchMovies()
                         }
                     }
                 if !viewModel.searchText.isEmpty {

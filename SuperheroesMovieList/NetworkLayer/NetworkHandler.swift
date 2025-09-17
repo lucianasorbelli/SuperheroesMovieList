@@ -8,6 +8,7 @@
 import Foundation
 
 protocol MovieAPIServiceProtocol {
+    func searhMovies(title: String) async throws -> MovieResponseDTO
     func fetchMovies(page: Int, parameters: [String: String]) async throws -> MovieResponseDTO
 }
 
@@ -17,6 +18,15 @@ class MovieAPIService: MovieAPIServiceProtocol {
     
     init(session: URLSession = .shared) {
         self.session = session
+    }
+    
+    
+    func searhMovies(title: String) async throws -> MovieResponseDTO {
+        guard let encodedTitle = title.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed),
+              let url = URL(string: "\(baseURL)?Title=\(encodedTitle)") else {
+            throw MovieAPIError.invalidURL
+        }
+        return try await performRequest(url: url)
     }
     
     func fetchMovies(page: Int, parameters: [String: String] = [:]) async throws -> MovieResponseDTO {

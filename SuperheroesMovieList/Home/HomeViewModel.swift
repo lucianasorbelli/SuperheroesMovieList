@@ -14,24 +14,14 @@ protocol HomeViewModeling: ObservableObject {
     var moviesFiltered: [Movie] { get }
     var viewState: HomeViewModel.HomeViewState { get }
     
+    func searchMovies()
     func closeTextField()
-    func searchMovies(title: String)
+    func loadFullMovies()
+    func loadMoreMovies()
+    func executeCurrentService()
 }
 
 final class HomeViewModel: HomeViewModeling {
-    
-    enum SearchCriteria {
-        case allMovies, searchByTitle(String)
-        
-        var parameters: [String: String] {
-            switch self {
-            case .allMovies:
-                return [:]
-            case .searchByTitle(let title):
-                return ["Title": title]
-            }
-        }
-    }
     
     enum HomeViewState {
         case loading
@@ -45,53 +35,124 @@ final class HomeViewModel: HomeViewModeling {
             moviesFiltered = movies
         }
     }
-    @Published var searchText: String = "" {
-        didSet { searchTextDidChange() }
-    }
+    
+    @Published var searchText: String = ""
     @Published var isLoadingMore: Bool = false
     @Published var moviesFiltered: [Movie] = []
     @Published var viewState: HomeViewState = .loading
     @Published var searchCriteria: SearchCriteria = .allMovies
     
     private var currentPage: Int = 1
+    private var canLoadMorePages = true
     private let networkService: MovieAPIServiceProtocol
     
     init(networkService: MovieAPIServiceProtocol = MovieAPIService()) {
         self.networkService = networkService
+        loadFullMovies()
+    }
+    
+    func loadFullMovies() {
         Task {
-            await loadMovies()
-        }
-    }
-    
-    func loadMovies() async {
-        await MainActor.run {
-            searchCriteria = .allMovies
-            viewState = .loading
-        }
-        do {
-            let response = try await networkService.fetchMovies(page: currentPage,
-                                                                parameters: searchCriteria.parameters)
-            
             await MainActor.run {
-                movies = response.data
-                response.data.isEmpty ? ( viewState = .empty ) : ( viewState = .content )
+                searchCriteria = .allMovies
+                viewState = .loading
             }
-        } catch {
-            
+            do {
+                let response = try await networkService.fetchMovies(page: currentPage,
+                                                                    parameters: searchCriteria.parameters)
+                await MainActor.run { [weak self] in
+                    self?.movies = response.data
+                    self?.canLoadMorePages = self?.currentPage ?? 1 < response.totalPages
+                    response.data.isEmpty ? self?.updateViewState(.empty) : self?.updateViewState(.content)
+                }
+            } catch {
+                updateViewState(.error)
+            }
         }
-        
     }
     
-    private func searchTextDidChange() {
-        
+    func loadMoreMovies() {
+        Task {
+            if canLoadMorePages && !isLoadingMore {
+                await MainActor.run {
+                    isLoadingMore = true
+                }
+                do {
+                    let nextPage = currentPage + 1
+                    let response: MovieResponseDTO
+                    
+                    switch searchCriteria {
+                    case .allMovies:
+                        response = try await networkService.fetchMovies(page: nextPage, parameters: searchCriteria.parameters)
+                        await MainActor.run { [weak self] in
+                            self?.currentPage = nextPage
+                            self?.canLoadMorePages = nextPage < response.totalPages
+                            self?.isLoadingMore = false
+                            self?.movies.append(contentsOf: response.data)
+                        }
+                    case .searchByTitle(let string):
+                        response = try await networkService.fetchMovies(page: nextPage, parameters: ["Title": "\(searchText)"])
+                        await MainActor.run { [weak self] in
+                            self?.currentPage = nextPage
+                            self?.canLoadMorePages = nextPage < response.totalPages
+                            self?.isLoadingMore = false
+                            self?.moviesFiltered.append(contentsOf: response.data)
+                        }
+                    }
+                } catch {
+                    
+                }
+            }
+        }
     }
     
-    func searchMovies(title: String) {
-        
+    private func updateViewState(_ newState: HomeViewState) {
+        Task {
+            await MainActor.run { [weak self] in
+                self?.viewState = newState
+            }
+        }
     }
     
-    func closeTextField() {
-        
+    func performNewSearch() {
+        Task {
+            await MainActor.run { [weak self] in
+                self?.viewState = .loading
+                self?.currentPage = 1
+                self?.moviesFiltered = []
+                self?.searchCriteria = .searchByTitle(self?.searchText ?? "")
+            }
+            
+            do {
+                let response = try await networkService.searhMovies(title: searchText)
+                await MainActor.run { [weak self] in
+                    self?.moviesFiltered = response.data
+                    self?.canLoadMorePages = self?.currentPage ?? 1 < response.totalPages
+                    response.data.isEmpty ? self?.updateViewState(.empty) : self?.updateViewState(.content)
+                }
+            } catch let error {
+                updateViewState(.error)
+            }
+        }
     }
+    
+    func searchMovies() {
+        if searchText.isEmpty {
+            loadFullMovies()
+        } else if searchText.count >= 3 {
+            performNewSearch()
+        }
+    }
+    
+    func executeCurrentService() {
+        switch searchCriteria {
+        case .allMovies:
+            loadFullMovies()
+        case .searchByTitle(_):
+            performNewSearch()
+        }
+    }
+    
+    func closeTextField() { searchText = "" }
 }
 
