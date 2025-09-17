@@ -69,20 +69,23 @@ struct HomeView<ViewModel>: View where ViewModel: HomeViewModeling {
     
     private var contentMoviesView: some View {
         ScrollView {
-            ForEach(viewModel.moviesFiltered) { movie in
-                MovieRowView(movie: movie)
-                    .listRowSeparatorTint(.clear)
-                    .background(.black)
-                    .overlay {
-                        RoundedRectangle(cornerRadius: 12)
-                            .stroke(.white, lineWidth: 1)
-                    }
-                    .onAppear(perform: {
-                        if movie.imdbID == viewModel.moviesFiltered.last?.imdbID {
-                            viewModel.loadMoreMovies()
+            LazyVStack {
+                ForEach(viewModel.moviesFiltered) { movie in
+                    MovieRowView(movie: movie)
+                        .listRowSeparatorTint(.clear)
+                        .background(.black)
+                        .overlay {
+                            RoundedRectangle(cornerRadius: 12)
+                                .stroke(.white, lineWidth: 1)
                         }
-                    })
+                }
             }
+            .task(id: viewModel.moviesFiltered.last?.id) {
+                if let last = viewModel.moviesFiltered.last {
+                    viewModel.loadMoreMovies()
+                }
+            }
+            
             if viewModel.isLoadingMore {
                 HStack {
                     Spacer()
