@@ -15,6 +15,7 @@ struct HomeView<ViewModel>: View where ViewModel: HomeViewModeling {
         NavigationView {
             VStack(spacing: 8) {
                 searchBarView
+                    .padding(.horizontal, 16)
                 actionButtonsView
                 switch viewModel.viewState {
                 case .loading:
@@ -27,7 +28,13 @@ struct HomeView<ViewModel>: View where ViewModel: HomeViewModeling {
                     emptyMoviesView
                 }
             }
-            .background(.black)
+            .background(
+                LinearGradient(
+                    colors: [Color(red: 0.0, green: 0.1, blue: 0.3), .black, .black],
+                    startPoint: .top,
+                    endPoint: .bottom
+                )
+            )
             .navigationBarHidden(true)
             .ignoresSafeArea(.keyboard)
         }
@@ -49,6 +56,7 @@ struct HomeView<ViewModel>: View where ViewModel: HomeViewModeling {
             sortButtonView
             resetButton
         }
+        .padding(.horizontal, 16)
         .disabled(viewModel.isLoadingMore)
     }
     
@@ -60,8 +68,12 @@ struct HomeView<ViewModel>: View where ViewModel: HomeViewModeling {
                 .padding(20)
                 .frame(maxWidth: .infinity)
                 .foregroundColor(.white)
-                .background( viewModel.isLoadingMore ? .gray : .blue)
-                .cornerRadius(14)
+                .background(.clear)
+                .cornerRadius(12)
+                .overlay(
+                    RoundedRectangle(cornerRadius: 12)
+                        .stroke(Color.white, lineWidth: 1)
+                )
         })
         .accessibilityLabel("Ordenar películas por \(viewModel.defaultSortCriteria.displayName)")
         .accessibilityHint("Toca dos veces para cambiar el orden de las películas")
@@ -75,8 +87,12 @@ struct HomeView<ViewModel>: View where ViewModel: HomeViewModeling {
                 .padding(20)
                 .frame(maxWidth: .infinity)
                 .foregroundColor(.white)
-                .background( viewModel.isLoadingMore ? .gray : .blue)
-                .cornerRadius(14)
+                .background(.clear)
+                .cornerRadius(12)
+                .overlay(
+                    RoundedRectangle(cornerRadius: 12)
+                        .stroke(Color.white, lineWidth: 1)
+                )
         })
         .accessibilityLabel(Strings.resetMovies.rawValue)
         .accessibilityHint(Strings.showAllMovies.rawValue)
@@ -101,6 +117,7 @@ struct HomeView<ViewModel>: View where ViewModel: HomeViewModeling {
                         .onTapGesture {
                             viewModel.didTap(movie)
                         }
+                        .padding(.horizontal, 16)
                 }
             }
             
@@ -173,31 +190,38 @@ struct HomeView<ViewModel>: View where ViewModel: HomeViewModeling {
                 Image(systemName: "magnifyingglass")
                     .foregroundColor(.white)
                 
-                TextField(Strings.searchMovies.rawValue, text: $viewModel.searchText)
-                    .textFieldStyle(PlainTextFieldStyle())
-                    .focused($isFocused)
+                TextField(Strings.searchMovies.rawValue,
+                          text: $viewModel.searchText,
+                          prompt: Text(Strings.searchMovies.rawValue)
                     .foregroundStyle(.white)
-                    .disableAutocorrection(true)
-                    .textInputAutocapitalization(.none)
-                    .accessibilityLabel(Strings.searchMoviesLabel.rawValue)
-                    .accessibilityHint(Strings.enterMovieName.rawValue)
-                    .textFieldStyle(PlainTextFieldStyle())
-                    .onChange(of: viewModel.searchText) { newValue in
-                        Task {
-                            viewModel.searchMovies()
-                        }
+                )
+                .textFieldStyle(PlainTextFieldStyle())
+                .focused($isFocused)
+                .foregroundStyle(.white)
+                .disableAutocorrection(true)
+                .textInputAutocapitalization(.none)
+                .accessibilityLabel(Strings.searchMoviesLabel.rawValue)
+                .accessibilityHint(Strings.enterMovieName.rawValue)
+                .textFieldStyle(PlainTextFieldStyle())
+                .onChange(of: viewModel.searchText) { newValue in
+                    Task {
+                        viewModel.searchMovies()
                     }
+                }
                 if !viewModel.searchText.isEmpty {
                     searchCloseButton
                 }
             }
-            .padding()
+            .padding(8)
             .cornerRadius(20)
-            .background(.gray)
-            .clipShape(RoundedRectangle(cornerRadius: 20, style: .continuous))
+            .background(.clear)
+            .overlay(
+                RoundedRectangle(cornerRadius: 12)
+                    .stroke(Color.white, lineWidth: 1)
+            )
         }
         .padding(.vertical, 12)
-        .background(.black)
+        .background(.clear)
         .cornerRadius(10)
     }
     
