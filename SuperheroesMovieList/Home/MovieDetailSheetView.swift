@@ -20,5 +20,7 @@ struct MovieDetailSheetView: View {
                 .font(.subheadline)
         }
         .padding(20)
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("\(movie.title), año \(movie.year).")
     }
 }

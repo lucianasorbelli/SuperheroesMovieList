@@ -37,6 +37,9 @@ struct HomeView<ViewModel>: View where ViewModel: HomeViewModeling {
                 MovieDetailSheetView(movie: movie)
                     .presentationDetents([.medium])
                     .presentationDragIndicator(.visible)
+                    .accessibilityElement(children: .combine)
+                    .accessibilityLabel("\(movie.title), año \(movie.year)")
+                    .accessibilityHint("Toca dos veces para ver los detalles de la película")
             }
         }
     }
@@ -60,6 +63,8 @@ struct HomeView<ViewModel>: View where ViewModel: HomeViewModeling {
                 .background( viewModel.isLoadingMore ? .gray : .blue)
                 .cornerRadius(14)
         })
+        .accessibilityLabel("Ordenar películas por \(viewModel.defaultSortCriteria.displayName)")
+        .accessibilityHint("Toca dos veces para cambiar el orden de las películas")
     }
     
     private var resetButton: some View {
@@ -73,6 +78,8 @@ struct HomeView<ViewModel>: View where ViewModel: HomeViewModeling {
                 .background( viewModel.isLoadingMore ? .gray : .blue)
                 .cornerRadius(14)
         })
+        .accessibilityLabel("Restablecer lista de películas")
+        .accessibilityHint("Vuelve a mostrar todas las películas")
     }
     
     private var contentMoviesView: some View {
@@ -171,6 +178,9 @@ struct HomeView<ViewModel>: View where ViewModel: HomeViewModeling {
                     .foregroundStyle(.white)
                     .disableAutocorrection(true)
                     .textInputAutocapitalization(.none)
+                    .accessibilityLabel("Buscar películas")
+                    .accessibilityHint("Ingrese el nombre de la película")
+                    .textFieldStyle(PlainTextFieldStyle())
                     .onChange(of: viewModel.searchText) { newValue in
                         Task {
                             viewModel.searchMovies()
@@ -196,7 +206,7 @@ struct HomeView<ViewModel>: View where ViewModel: HomeViewModeling {
         }) {
             Image(systemName: "xmark.circle.fill")
                 .foregroundColor(.secondary)
-        }
+        }.accessibilityLabel("Borrar búsqueda")
     }
 }
 
