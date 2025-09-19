@@ -159,6 +159,7 @@ struct HomeView<ViewModel>: View where ViewModel: HomeViewModeling {
     private var loadingView: some View {
         ProgressView(Strings.loadingMovies.rawValue)
             .frame(maxWidth: .infinity, maxHeight: .infinity)
+            .foregroundStyle(.white)
     }
     
     private var searchBarView: some View {
