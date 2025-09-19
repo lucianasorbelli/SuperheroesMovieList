@@ -31,6 +31,13 @@ struct HomeView<ViewModel>: View where ViewModel: HomeViewModeling {
             .ignoresSafeArea(.keyboard)
         }
         .background(.black)
+        .sheet(isPresented: $viewModel.isSheetPresented) {
+            if let movie = viewModel.selectedMovie {
+                MovieDetailSheetView(movie: movie)
+                    .presentationDetents([.medium])
+                    .presentationDragIndicator(.visible)
+            }
+        }
     }
     
     private var actionButtonsView: some View {
@@ -62,7 +69,7 @@ struct HomeView<ViewModel>: View where ViewModel: HomeViewModeling {
                 .padding(20)
                 .frame(maxWidth: .infinity)
                 .foregroundColor(.white)
-                .background(.gray)
+                .background( viewModel.isLoadingMore ? .gray : .blue)
                 .cornerRadius(14)
         })
     }
@@ -78,6 +85,9 @@ struct HomeView<ViewModel>: View where ViewModel: HomeViewModeling {
                             RoundedRectangle(cornerRadius: 12)
                                 .stroke(.white, lineWidth: 1)
                         }
+                        .onTapGesture {
+                            viewModel.didTap(movie)
+                    }
                 }
             }
             .task(id: viewModel.moviesFiltered.last?.id) {
@@ -106,13 +116,16 @@ struct HomeView<ViewModel>: View where ViewModel: HomeViewModeling {
     
     private var errorView: some View {
         VStack(alignment: .center) {
-            Text("Something went wrong")
-                .font(.title2)
-                .fontWeight(.heavy)
-                .padding(.top, 30)
-            Text("Please try again")
-                .font(.title3)
-                .fontWeight(.light)
+            Group{
+                Text("Something went wrong")
+                Text("Please try again")
+            }
+            .font(.title3)
+            .foregroundStyle(.white)
+            .multilineTextAlignment(.center)
+            .fontWeight(.medium)
+            .padding(.top, 30)
+            .padding(.horizontal, 20)
             Button(action: {
                 viewModel.executeCurrentService()
             }, label: {
@@ -124,18 +137,13 @@ struct HomeView<ViewModel>: View where ViewModel: HomeViewModeling {
     
     private var emptyMoviesView: some View {
         VStack(alignment: .center) {
-            Text("Something went wrong")
-                .font(.title2)
-                .fontWeight(.heavy)
-                .padding(.top, 30)
-            Text("Please try again")
+            Text("No se han encontrado películas, por favor intente con otro título")
+                .multilineTextAlignment(.center)
                 .font(.title3)
-                .fontWeight(.light)
-            Button(action: {
-                viewModel.executeCurrentService()
-            }, label: {
-                Text("Reintentar")
-            })
+                .fontWeight(.medium)
+                .padding(.top, 30)
+                .padding(.horizontal, 20)
+                .foregroundStyle(.white)
             Spacer()
         }
     }

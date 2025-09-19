@@ -11,16 +11,20 @@ protocol HomeViewModeling: ObservableObject {
     var movies: [Movie] { get }
     var isLoadingMore: Bool { get }
     var searchText: String { get set }
+    var canLoadMorePages: Bool { get }
     var moviesFiltered: [Movie] { get }
+    var selectedMovie: Movie? { get }
     var defaultSortCriteria: SortCriteria { get }
     var viewState: HomeViewModel.HomeViewState { get }
+    var isSheetPresented: Bool { set get }
     
+    func sortByYear()
     func searchMovies()
     func closeTextField()
     func loadFullMovies()
     func loadMoreMovies()
+    func didTap(_ movie: Movie)
     func executeCurrentService()
-    func sortByYear()
 }
 
 final class HomeViewModel: HomeViewModeling {
@@ -38,16 +42,17 @@ final class HomeViewModel: HomeViewModeling {
         }
     }
     
+    @Published var selectedMovie: Movie?
     @Published var searchText: String = ""
     @Published var isLoadingMore: Bool = false
     @Published var moviesFiltered: [Movie] = []
+    @Published var isSheetPresented: Bool = false
     @Published var viewState: HomeViewState = .loading
     @Published var searchCriteria: SearchCriteria = .allMovies
     @Published var defaultSortCriteria: SortCriteria = .ascending
     
     private var currentPage: Int = 1
-    private var canLoadMorePages = true
-    private var currentTask: Task<Void, Never>?
+    @Published var canLoadMorePages = true
     private let networkService: MovieAPIServiceProtocol
     
     init(networkService: MovieAPIServiceProtocol = MovieAPIService()) {
@@ -56,8 +61,8 @@ final class HomeViewModel: HomeViewModeling {
     }
     
     func loadFullMovies() {
-        currentTask?.cancel()
-        currentTask = Task {
+        searchText = ""
+        Task {
             await MainActor.run { [weak self] in
                 self?.updateViewState(.loading)
                 self?.currentPage = 1
@@ -78,38 +83,33 @@ final class HomeViewModel: HomeViewModeling {
     }
     
     func loadMoreMovies() {
-        currentTask?.cancel()
-        currentTask = Task {
-            if canLoadMorePages && !isLoadingMore {
-                await MainActor.run { [weak self] in
-                    self?.isLoadingMore = true
-                }
-                do {
-                    let nextPage = currentPage + 1
-                    let response: MovieResponseDTO
+        Task { @MainActor in
+            guard canLoadMorePages, !isLoadingMore else { return }
+            isLoadingMore = true
+            
+            let nextPage = currentPage + 1
+            do {
+                let response: MovieResponseDTO
+                switch searchCriteria {
+                case .allMovies:
+                    response = try await networkService.fetchMovies(page: nextPage, parameters: searchCriteria.parameters)
+                    if Task.isCancelled { return }
+                    currentPage = nextPage
+                    canLoadMorePages = nextPage < response.totalPages
+                    movies.append(contentsOf: response.data)
                     
-                    switch searchCriteria {
-                    case .allMovies:
-                        response = try await networkService.fetchMovies(page: nextPage, parameters: searchCriteria.parameters)
-                        await MainActor.run { [weak self] in
-                            self?.currentPage = nextPage
-                            self?.canLoadMorePages = nextPage < response.totalPages
-                            self?.isLoadingMore = false
-                            self?.movies.append(contentsOf: response.data)
-                        }
-                    case .searchByTitle(_):
-                        response = try await networkService.fetchMovies(page: nextPage, parameters: ["Title": "\(searchText)"])
-                        await MainActor.run { [weak self] in
-                            self?.currentPage = nextPage
-                            self?.canLoadMorePages = nextPage < response.totalPages
-                            self?.isLoadingMore = false
-                            self?.moviesFiltered.append(contentsOf: response.data)
-                        }
-                    }
-                } catch {
-                    self.isLoadingMore = false
-                    self.updateViewState(.error)
+                case .searchByTitle(_):
+                    response = try await networkService.fetchMovies(page: nextPage, parameters: ["Title": "\(searchText)"])
+                    if Task.isCancelled { return }
+                    currentPage = nextPage
+                    canLoadMorePages = nextPage < response.totalPages
+                    moviesFiltered.append(contentsOf: response.data)
                 }
+                
+                isLoadingMore = false
+            } catch {
+                isLoadingMore = false
+                updateViewState(.error)
             }
         }
     }
@@ -123,8 +123,7 @@ final class HomeViewModel: HomeViewModeling {
     }
     
     func performNewSearch() {
-        currentTask?.cancel()
-        currentTask = Task {
+        Task {
             await MainActor.run { [weak self] in
                 self?.viewState = .loading
                 self?.currentPage = 1
@@ -164,6 +163,11 @@ final class HomeViewModel: HomeViewModeling {
     
     func closeTextField() { searchText = "" }
     
+    func didTap(_ movie: Movie) {
+        selectedMovie =  movie
+        isSheetPresented.toggle()
+    }
+
     func sortByYear() {
         if !isLoadingMore {
             switch defaultSortCriteria {
