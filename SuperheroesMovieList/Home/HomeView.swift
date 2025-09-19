@@ -28,9 +28,17 @@ struct HomeView<ViewModel>: View where ViewModel: HomeViewModeling {
                 }
             }
             .background(.black)
+            .navigationBarHidden(true)
             .ignoresSafeArea(.keyboard)
         }
         .background(.black)
+        .sheet(isPresented: $viewModel.isSheetPresented) {
+            if let movie = viewModel.selectedMovie {
+                MovieDetailSheetView(movie: movie)
+                    .presentationDetents([.medium])
+                    .presentationDragIndicator(.visible)
+            }
+        }
     }
     
     private var actionButtonsView: some View {
@@ -41,19 +49,6 @@ struct HomeView<ViewModel>: View where ViewModel: HomeViewModeling {
         .disabled(viewModel.isLoadingMore)
     }
     
-    private var resetButton: some View {
-        Button(action: {
-            viewModel.loadFullMovies()
-        }, label: {
-            Text("Reset")
-                .padding(20)
-                .frame(maxWidth: .infinity)
-                .foregroundColor(.white)
-                .background(.gray)
-                .cornerRadius(14)
-        })
-    }
-    
     private var sortButtonView: some View {
         Button(action: {
             viewModel.sortByYear()
@@ -62,27 +57,46 @@ struct HomeView<ViewModel>: View where ViewModel: HomeViewModeling {
                 .padding(20)
                 .frame(maxWidth: .infinity)
                 .foregroundColor(.white)
-                .background(.gray)
+                .background( viewModel.isLoadingMore ? .gray : .blue)
+                .cornerRadius(14)
+        })
+    }
+    
+    private var resetButton: some View {
+        Button(action: {
+            viewModel.loadFullMovies()
+        }, label: {
+            Text("Reset")
+                .padding(20)
+                .frame(maxWidth: .infinity)
+                .foregroundColor(.white)
+                .background( viewModel.isLoadingMore ? .gray : .blue)
                 .cornerRadius(14)
         })
     }
     
     private var contentMoviesView: some View {
         ScrollView {
-            ForEach(viewModel.moviesFiltered) { movie in
-                MovieRowView(movie: movie)
-                    .listRowSeparatorTint(.clear)
-                    .background(.black)
-                    .overlay {
-                        RoundedRectangle(cornerRadius: 12)
-                            .stroke(.white, lineWidth: 1)
-                    }
-                    .onAppear(perform: {
-                        if movie.imdbID == viewModel.moviesFiltered.last?.imdbID {
-                            viewModel.loadMoreMovies()
+            LazyVStack {
+                ForEach(viewModel.moviesFiltered) { movie in
+                    MovieRowView(movie: movie)
+                        .listRowSeparatorTint(.clear)
+                        .background(.black)
+                        .overlay {
+                            RoundedRectangle(cornerRadius: 12)
+                                .stroke(.white, lineWidth: 1)
                         }
-                    })
+                        .onAppear(perform: {
+                            if let lastMovie = viewModel.moviesFiltered.last {
+                                viewModel.loadMoreMovies()
+                            }
+                        })
+                        .onTapGesture {
+                            viewModel.didTap(movie)
+                        }
+                }
             }
+            
             if viewModel.isLoadingMore {
                 HStack {
                     Spacer()
@@ -103,13 +117,16 @@ struct HomeView<ViewModel>: View where ViewModel: HomeViewModeling {
     
     private var errorView: some View {
         VStack(alignment: .center) {
-            Text("Something went wrong")
-                .font(.title2)
-                .fontWeight(.heavy)
-                .padding(.top, 30)
-            Text("Please try again")
-                .font(.title3)
-                .fontWeight(.light)
+            Group{
+                Text("Something went wrong")
+                Text("Please try again")
+            }
+            .font(.title3)
+            .foregroundStyle(.white)
+            .multilineTextAlignment(.center)
+            .fontWeight(.medium)
+            .padding(.top, 30)
+            .padding(.horizontal, 20)
             Button(action: {
                 viewModel.executeCurrentService()
             }, label: {
@@ -121,18 +138,13 @@ struct HomeView<ViewModel>: View where ViewModel: HomeViewModeling {
     
     private var emptyMoviesView: some View {
         VStack(alignment: .center) {
-            Text("Something went wrong")
-                .font(.title2)
-                .fontWeight(.heavy)
-                .padding(.top, 30)
-            Text("Please try again")
+            Text("No se han encontrado películas, por favor intente con otro título")
+                .multilineTextAlignment(.center)
                 .font(.title3)
-                .fontWeight(.light)
-            Button(action: {
-                viewModel.executeCurrentService()
-            }, label: {
-                Text("Reintentar")
-            })
+                .fontWeight(.medium)
+                .padding(.top, 30)
+                .padding(.horizontal, 20)
+                .foregroundStyle(.white)
             Spacer()
         }
     }
@@ -151,7 +163,7 @@ struct HomeView<ViewModel>: View where ViewModel: HomeViewModeling {
             
             HStack {
                 Image(systemName: "magnifyingglass")
-                    .foregroundColor(.gray)
+                    .foregroundColor(.white)
                 
                 TextField("Search Movies...", text: $viewModel.searchText)
                     .textFieldStyle(PlainTextFieldStyle())
@@ -161,17 +173,20 @@ struct HomeView<ViewModel>: View where ViewModel: HomeViewModeling {
                     .textInputAutocapitalization(.none)
                     .onChange(of: viewModel.searchText) { newValue in
                         Task {
-                            await viewModel.searchMovies()
+                            viewModel.searchMovies()
                         }
                     }
                 if !viewModel.searchText.isEmpty {
                     searchCloseButton
                 }
             }
+            .padding()
+            .cornerRadius(20)
+            .background(.gray)
+            .clipShape(RoundedRectangle(cornerRadius: 20, style: .continuous))
         }
-        .padding(.horizontal, 16)
         .padding(.vertical, 12)
-        .background(Color(.systemGray6))
+        .background(.black)
         .cornerRadius(10)
     }
     
