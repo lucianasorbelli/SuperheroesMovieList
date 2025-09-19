@@ -39,7 +39,7 @@ struct HomeView<ViewModel>: View where ViewModel: HomeViewModeling {
                     .presentationDragIndicator(.visible)
                     .accessibilityElement(children: .combine)
                     .accessibilityLabel("\(movie.title), año \(movie.year)")
-                    .accessibilityHint("Toca dos veces para ver los detalles de la película")
+                    .accessibilityHint(Strings.tapToSeeMovieDetails.rawValue)
             }
         }
     }
@@ -71,15 +71,15 @@ struct HomeView<ViewModel>: View where ViewModel: HomeViewModeling {
         Button(action: {
             viewModel.loadFullMovies()
         }, label: {
-            Text("Reset")
+            Text(Strings.reset.rawValue)
                 .padding(20)
                 .frame(maxWidth: .infinity)
                 .foregroundColor(.white)
                 .background( viewModel.isLoadingMore ? .gray : .blue)
                 .cornerRadius(14)
         })
-        .accessibilityLabel("Restablecer lista de películas")
-        .accessibilityHint("Vuelve a mostrar todas las películas")
+        .accessibilityLabel(Strings.resetMovies.rawValue)
+        .accessibilityHint(Strings.showAllMovies.rawValue)
     }
     
     private var contentMoviesView: some View {
@@ -110,7 +110,7 @@ struct HomeView<ViewModel>: View where ViewModel: HomeViewModeling {
                     ProgressView()
                         .scaleEffect(0.8)
                         .progressViewStyle(CircularProgressViewStyle(tint: .white))
-                    Text("Loading more...")
+                    Text(Strings.loadingMore.rawValue)
                         .font(.caption)
                         .foregroundStyle(.gray)
                     Spacer()
@@ -125,8 +125,8 @@ struct HomeView<ViewModel>: View where ViewModel: HomeViewModeling {
     private var errorView: some View {
         VStack(alignment: .center) {
             Group{
-                Text("Something went wrong")
-                Text("Please try again")
+                Text(Strings.somethingWentWrong.rawValue)
+                Text(Strings.pleaseTryAgain.rawValue)
             }
             .font(.title3)
             .foregroundStyle(.white)
@@ -137,7 +137,7 @@ struct HomeView<ViewModel>: View where ViewModel: HomeViewModeling {
             Button(action: {
                 viewModel.executeCurrentService()
             }, label: {
-                Text("Reintentar")
+                Text(Strings.retry.rawValue)
             })
             Spacer()
         }
@@ -145,7 +145,7 @@ struct HomeView<ViewModel>: View where ViewModel: HomeViewModeling {
     
     private var emptyMoviesView: some View {
         VStack(alignment: .center) {
-            Text("No se han encontrado películas, por favor intente con otro título")
+            Text(Strings.moviesNotFound.rawValue)
                 .multilineTextAlignment(.center)
                 .font(.title3)
                 .fontWeight(.medium)
@@ -157,13 +157,13 @@ struct HomeView<ViewModel>: View where ViewModel: HomeViewModeling {
     }
     
     private var loadingView: some View {
-        ProgressView("Cargando películas...")
+        ProgressView(Strings.loadingMovies.rawValue)
             .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
     
     private var searchBarView: some View {
         VStack(spacing: 16) {
-            Text("Movie List")
+            Text(Strings.movieListTitle.rawValue)
                 .font(.title2)
                 .fontWeight(.bold)
                 .foregroundColor(.white)
@@ -172,14 +172,14 @@ struct HomeView<ViewModel>: View where ViewModel: HomeViewModeling {
                 Image(systemName: "magnifyingglass")
                     .foregroundColor(.white)
                 
-                TextField("Search Movies...", text: $viewModel.searchText)
+                TextField(Strings.searchMovies.rawValue, text: $viewModel.searchText)
                     .textFieldStyle(PlainTextFieldStyle())
                     .focused($isFocused)
                     .foregroundStyle(.white)
                     .disableAutocorrection(true)
                     .textInputAutocapitalization(.none)
-                    .accessibilityLabel("Buscar películas")
-                    .accessibilityHint("Ingrese el nombre de la película")
+                    .accessibilityLabel(Strings.searchMoviesLabel.rawValue)
+                    .accessibilityHint(Strings.enterMovieName.rawValue)
                     .textFieldStyle(PlainTextFieldStyle())
                     .onChange(of: viewModel.searchText) { newValue in
                         Task {
@@ -206,7 +206,7 @@ struct HomeView<ViewModel>: View where ViewModel: HomeViewModeling {
         }) {
             Image(systemName: "xmark.circle.fill")
                 .foregroundColor(.secondary)
-        }.accessibilityLabel("Borrar búsqueda")
+        }.accessibilityLabel(Strings.resetSearch.rawValue)
     }
 }
 
