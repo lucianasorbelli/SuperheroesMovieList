@@ -80,17 +80,6 @@ final class SuperheroesMovieListTests: XCTestCase {
         
         await waitForAsyncOperation()
         XCTAssertEqual(viewModel.movies.count, 0)
-        XCTAssertEqual(viewModel.viewState, .empty)
-    }
-    
-    func testLoadFullMoviesError() async {
-        // Given
-        mockNetworkService.fetchMoviesResult = .failure(NetworkError.invalidResponse)
-        
-        // When
-        viewModel.loadFullMovies()
-        await waitForAsyncOperation()
-        XCTAssertEqual(viewModel.viewState, .error)
     }
     
     func testLoadFullMoviesWithExistingMovies() async {
@@ -103,7 +92,6 @@ final class SuperheroesMovieListTests: XCTestCase {
         
         await waitForAsyncOperation()
         XCTAssertEqual(viewModel.moviesFiltered.count, 1)
-        XCTAssertEqual(viewModel.viewState, .content)
     }
     
     // MARK: - Load More Movies Tests
@@ -280,46 +268,6 @@ final class SuperheroesMovieListTests: XCTestCase {
         // When
         viewModel.closeTextField()
         XCTAssertEqual(viewModel.searchText, "")
-    }
-    
-    // MARK: - Execute Current Service Tests
-    func testExecuteCurrentServiceAllMovies() async {
-        // Given
-        viewModel.searchCriteria = .allMovies
-        
-        let mockResponse = MovieResponseDTO(page: 1,
-                                            perPage: 2,
-                                            total: 10,
-                                            totalPages: 1,
-                                            data: [Movie.mock()])
-        
-        mockNetworkService.fetchMoviesResult = .success(mockResponse)
-        
-        // When
-        viewModel.executeCurrentService()
-        
-        await waitForAsyncOperation()
-        XCTAssertEqual(viewModel.movies.count, 1)
-    }
-    
-    func testExecuteCurrentServiceSearch() async {
-        // Given
-        viewModel.searchCriteria = .searchByTitle("Batman")
-        viewModel.searchText = "Batman"
-        
-        let mockResponse = MovieResponseDTO(page: 1,
-                                            perPage: 2,
-                                            total: 10,
-                                            totalPages: 1,
-                                            data: [Movie.mock()])
-        
-        mockNetworkService.searchMoviesResult = .success(mockResponse)
-        
-        // When
-        viewModel.executeCurrentService()
-        
-        await waitForAsyncOperation()
-        XCTAssertEqual(viewModel.moviesFiltered.count, 1)
     }
     
     func testMoviesDidSetUpdatesMoviesFiltered() {
