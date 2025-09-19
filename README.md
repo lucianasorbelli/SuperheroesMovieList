@@ -1,6 +1,6 @@
 # 🎬 SuperheroesMovieList
 
-<img width="1206" height="2622" alt="image" src="https://github.com/user-attachments/assets/6d18f2ff-ffcb-4830-95a4-3a4811cd393c" />
+<img width="1206" height="2622" alt="image" src="https://github.com/user-attachments/assets/995ad404-f6be-4a3c-a41d-2336285f3450" />
 
 
 **SuperheroesMovieList** is an iOS app built with **SwiftUI** and **Combine**, following a clean **MVVM architecture** with a **state machine** for robust and scalable UI management.  
