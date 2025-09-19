@@ -10,13 +10,12 @@ import Combine
 protocol HomeViewModeling: ObservableObject {
     var movies: [Movie] { get }
     var isLoadingMore: Bool { get }
-    var searchText: String { get set }
-    var canLoadMorePages: Bool { get }
-    var moviesFiltered: [Movie] { get }
     var selectedMovie: Movie? { get }
+    var searchText: String { get set }
+    var moviesFiltered: [Movie] { get }
+    var isSheetPresented: Bool { set get }
     var defaultSortCriteria: SortCriteria { get }
     var viewState: HomeViewModel.HomeViewState { get }
-    var isSheetPresented: Bool { set get }
     
     func sortByYear()
     func searchMovies()
