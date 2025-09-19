@@ -5,7 +5,7 @@
 //  Created by Luciana Sorbelli on 17/09/2025.
 //
 
-enum SortCriteria: String, CaseIterable {
+public enum SortCriteria: String, CaseIterable {
     case descending = "desc"
     case ascending = "asc"
     

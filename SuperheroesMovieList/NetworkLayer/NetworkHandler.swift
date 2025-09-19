@@ -7,7 +7,7 @@
 
 import Foundation
 
-protocol MovieAPIServiceProtocol {
+public protocol MovieAPIServiceProtocol {
     func searhMovies(title: String) async throws -> MovieResponseDTO
     func fetchMovies(page: Int, parameters: [String: String]) async throws -> MovieResponseDTO
 }
