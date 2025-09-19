@@ -34,3 +34,9 @@ Clone the repository:
 git clone https://github.com/your-username/SuperheroesMovieList.git
 cd SuperheroesMovieList
 open SuperheroesMovieList.xcodeproj
+```
+
+📌 Notes
+While the original challenge specified three separate buttons (sort, order, and reset),
+I made a design decision to merge sort and order into a single toggle by year.
+This provides a cleaner UX without losing functionality, since the user can still switch between ascending and descending order intuitively.
