@@ -93,7 +93,8 @@ final class HomeViewModel: HomeViewModeling {
     }
     
     func loadMoreMovies() {
-        Task { @MainActor in
+        Task { @MainActor [weak self] in
+            guard let self else { return }
             guard canLoadMorePages, !isLoadingMore else { return }
             isLoadingMore = true
             
