@@ -28,6 +28,7 @@ struct HomeView<ViewModel>: View where ViewModel: HomeViewModeling {
                 }
             }
             .background(.black)
+            .navigationBarHidden(true)
             .ignoresSafeArea(.keyboard)
         }
         .background(.black)
@@ -48,24 +49,24 @@ struct HomeView<ViewModel>: View where ViewModel: HomeViewModeling {
         .disabled(viewModel.isLoadingMore)
     }
     
-    private var resetButton: some View {
-        Button(action: {
-            viewModel.loadFullMovies()
-        }, label: {
-            Text("Reset")
-                .padding(20)
-                .frame(maxWidth: .infinity)
-                .foregroundColor(.white)
-                .background(.gray)
-                .cornerRadius(14)
-        })
-    }
-    
     private var sortButtonView: some View {
         Button(action: {
             viewModel.sortByYear()
         }, label: {
             Text(viewModel.defaultSortCriteria.displayName)
+                .padding(20)
+                .frame(maxWidth: .infinity)
+                .foregroundColor(.white)
+                .background( viewModel.isLoadingMore ? .gray : .blue)
+                .cornerRadius(14)
+        })
+    }
+    
+    private var resetButton: some View {
+        Button(action: {
+            viewModel.loadFullMovies()
+        }, label: {
+            Text("Reset")
                 .padding(20)
                 .frame(maxWidth: .infinity)
                 .foregroundColor(.white)
@@ -85,14 +86,14 @@ struct HomeView<ViewModel>: View where ViewModel: HomeViewModeling {
                             RoundedRectangle(cornerRadius: 12)
                                 .stroke(.white, lineWidth: 1)
                         }
+                        .onAppear(perform: {
+                            if let lastMovie = viewModel.moviesFiltered.last {
+                                viewModel.loadMoreMovies()
+                            }
+                        })
                         .onTapGesture {
                             viewModel.didTap(movie)
-                    }
-                }
-            }
-            .task(id: viewModel.moviesFiltered.last?.id) {
-                if let last = viewModel.moviesFiltered.last {
-                    viewModel.loadMoreMovies()
+                        }
                 }
             }
             
@@ -162,7 +163,7 @@ struct HomeView<ViewModel>: View where ViewModel: HomeViewModeling {
             
             HStack {
                 Image(systemName: "magnifyingglass")
-                    .foregroundColor(.gray)
+                    .foregroundColor(.white)
                 
                 TextField("Search Movies...", text: $viewModel.searchText)
                     .textFieldStyle(PlainTextFieldStyle())
@@ -172,17 +173,20 @@ struct HomeView<ViewModel>: View where ViewModel: HomeViewModeling {
                     .textInputAutocapitalization(.none)
                     .onChange(of: viewModel.searchText) { newValue in
                         Task {
-                            await viewModel.searchMovies()
+                            viewModel.searchMovies()
                         }
                     }
                 if !viewModel.searchText.isEmpty {
                     searchCloseButton
                 }
             }
+            .padding()
+            .cornerRadius(20)
+            .background(.gray)
+            .clipShape(RoundedRectangle(cornerRadius: 20, style: .continuous))
         }
-        .padding(.horizontal, 16)
         .padding(.vertical, 12)
-        .background(Color(.systemGray6))
+        .background(.black)
         .cornerRadius(10)
     }
     

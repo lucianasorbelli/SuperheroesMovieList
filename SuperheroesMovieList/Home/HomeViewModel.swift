@@ -51,8 +51,8 @@ final class HomeViewModel: HomeViewModeling {
     @Published var searchCriteria: SearchCriteria = .allMovies
     @Published var defaultSortCriteria: SortCriteria = .ascending
     
+    var canLoadMorePages = false
     private var currentPage: Int = 1
-    @Published var canLoadMorePages = true
     private let networkService: MovieAPIServiceProtocol
     
     init(networkService: MovieAPIServiceProtocol = MovieAPIService()) {
@@ -62,12 +62,22 @@ final class HomeViewModel: HomeViewModeling {
     
     func loadFullMovies() {
         searchText = ""
+        canLoadMorePages = false
         Task {
             await MainActor.run { [weak self] in
                 self?.updateViewState(.loading)
                 self?.currentPage = 1
                 self?.searchCriteria = .allMovies
             }
+            
+            if !(self.movies.isEmpty) {
+                await MainActor.run { [weak self] in
+                    self?.moviesFiltered = self?.movies ?? []
+                    self?.updateViewState(.content)
+                }
+                return
+            }
+            
             do {
                 let response = try await networkService.fetchMovies(page: currentPage,
                                                                     parameters: searchCriteria.parameters)
@@ -93,14 +103,12 @@ final class HomeViewModel: HomeViewModeling {
                 switch searchCriteria {
                 case .allMovies:
                     response = try await networkService.fetchMovies(page: nextPage, parameters: searchCriteria.parameters)
-                    if Task.isCancelled { return }
                     currentPage = nextPage
                     canLoadMorePages = nextPage < response.totalPages
                     movies.append(contentsOf: response.data)
                     
                 case .searchByTitle(_):
                     response = try await networkService.fetchMovies(page: nextPage, parameters: ["Title": "\(searchText)"])
-                    if Task.isCancelled { return }
                     currentPage = nextPage
                     canLoadMorePages = nextPage < response.totalPages
                     moviesFiltered.append(contentsOf: response.data)
@@ -167,7 +175,7 @@ final class HomeViewModel: HomeViewModeling {
         selectedMovie =  movie
         isSheetPresented.toggle()
     }
-
+    
     func sortByYear() {
         if !isLoadingMore {
             switch defaultSortCriteria {

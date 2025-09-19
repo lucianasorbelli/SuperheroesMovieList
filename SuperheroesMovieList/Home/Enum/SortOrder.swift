@@ -12,14 +12,13 @@ enum SortCriteria: String, CaseIterable {
     var displayName: String {
         switch self {
         case .descending:
-            return "↓ Order"
+            return "↓ Sort"
         case .ascending:
-            return "↑ Order"
+            return "↑ Sort"
         }
     }
     
     mutating func toggle() {
         self = (self == .ascending) ? .descending : .ascending
     }
-    
 }
