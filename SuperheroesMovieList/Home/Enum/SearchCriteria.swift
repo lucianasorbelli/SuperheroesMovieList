@@ -5,7 +5,7 @@
 //  Created by Luciana Sorbelli on 17/09/2025.
 //
 
-enum SearchCriteria {
+public enum SearchCriteria: Equatable{
     case allMovies, searchByTitle(String)
     
     var parameters: [String: String] {

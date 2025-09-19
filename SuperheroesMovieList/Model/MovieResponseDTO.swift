@@ -7,7 +7,7 @@
 
 import Foundation
 
-struct MovieResponseDTO: Codable {
+public struct MovieResponseDTO: Codable {
     let page, perPage, total, totalPages: Int
     let data: [Movie]
     
@@ -20,12 +20,12 @@ struct MovieResponseDTO: Codable {
     }
 }
 
-struct Movie: Codable, Identifiable {
+public struct Movie: Codable, Identifiable, Equatable {
     let title: String
     let year: Int
     let imdbID: String
     
-    var id: String { imdbID }
+    public var id: String { imdbID }
 
     enum CodingKeys: String, CodingKey {
         case title = "Title"
