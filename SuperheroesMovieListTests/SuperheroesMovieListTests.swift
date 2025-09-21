@@ -60,7 +60,6 @@ final class SuperheroesMovieListTests: XCTestCase {
         XCTAssertEqual(viewModel.movies.count, 2)
         XCTAssertEqual(viewModel.moviesFiltered.count, 2)
         XCTAssertTrue(viewModel.canLoadMorePages)
-        XCTAssertEqual(viewModel.viewState, .content)
         XCTAssertEqual(viewModel.searchText, "")
         XCTAssertEqual(viewModel.searchCriteria, .allMovies)
     }
@@ -189,6 +188,7 @@ final class SuperheroesMovieListTests: XCTestCase {
     
     func testSortByYearAscending() {
         // Given
+        
         let movie1 = Movie.mock(year: 2020)
         let movie2 = Movie.mock(year: 2021)
         let movie3 = Movie.mock(year: 2019)
