@@ -13,6 +13,7 @@ struct MovieRowView: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 16) {
             Text(movie.title)
+                .accessibilityIdentifier("name")
                 .font(.headline)
                 .fontWeight(.semibold)
                 .foregroundColor(.white)
@@ -24,6 +25,7 @@ struct MovieRowView: View {
                         .font(.caption)
                         .foregroundColor(.white)
                     Text("\(movie.year)")
+                        .accessibilityIdentifier("year")
                         .font(.subheadline)
                         .foregroundColor(.white)
                 }
@@ -33,6 +35,7 @@ struct MovieRowView: View {
                         .font(.caption)
                         .foregroundColor(.white)
                     Text("ID: \(movie.imdbID)")
+                        .accessibilityIdentifier("imdb")
                         .font(.caption)
                         .foregroundColor(.white)
                 }

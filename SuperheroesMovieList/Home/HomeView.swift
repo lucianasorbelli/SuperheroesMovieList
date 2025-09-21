@@ -75,6 +75,7 @@ struct HomeView<ViewModel>: View where ViewModel: HomeViewModeling {
                         .stroke(Color.white, lineWidth: 1)
                 )
         })
+        .accessibilityIdentifier("orderToggleButton")
         .accessibilityLabel("Ordenar películas por \(viewModel.defaultSortCriteria.displayName)")
         .accessibilityHint("Toca dos veces para cambiar el orden de las películas")
     }
@@ -94,6 +95,7 @@ struct HomeView<ViewModel>: View where ViewModel: HomeViewModeling {
                         .stroke(Color.white, lineWidth: 1)
                 )
         })
+        .accessibilityIdentifier("clearSortButton")
         .accessibilityLabel(Strings.resetMovies.rawValue)
         .accessibilityHint(Strings.showAllMovies.rawValue)
     }
@@ -103,6 +105,7 @@ struct HomeView<ViewModel>: View where ViewModel: HomeViewModeling {
             LazyVStack {
                 ForEach(viewModel.moviesFiltered) { movie in
                     MovieRowView(movie: movie)
+                        .accessibilityIdentifier("movies-item")
                         .listRowSeparatorTint(.clear)
                         .background(.black)
                         .overlay {
@@ -126,6 +129,7 @@ struct HomeView<ViewModel>: View where ViewModel: HomeViewModeling {
                     Spacer()
                     ProgressView()
                         .scaleEffect(0.8)
+                        .accessibilityIdentifier("load-more-progress")
                         .progressViewStyle(CircularProgressViewStyle(tint: .white))
                     Text(Strings.loadingMore.rawValue)
                         .font(.caption)
@@ -134,6 +138,7 @@ struct HomeView<ViewModel>: View where ViewModel: HomeViewModeling {
                 }
             }
         }
+        .accessibilityIdentifier("movie-list")
         .scrollContentBackground(.hidden)
         .listStyle(PlainListStyle())
         .background(.black)
@@ -185,6 +190,7 @@ struct HomeView<ViewModel>: View where ViewModel: HomeViewModeling {
                 .font(.title2)
                 .fontWeight(.bold)
                 .foregroundColor(.white)
+                .accessibilityIdentifier("header-title")
             
             HStack {
                 Image(systemName: "magnifyingglass")
@@ -200,6 +206,7 @@ struct HomeView<ViewModel>: View where ViewModel: HomeViewModeling {
                 .foregroundStyle(.white)
                 .disableAutocorrection(true)
                 .textInputAutocapitalization(.none)
+                .accessibilityIdentifier("search-input")
                 .accessibilityLabel(Strings.searchMoviesLabel.rawValue)
                 .accessibilityHint(Strings.enterMovieName.rawValue)
                 .textFieldStyle(PlainTextFieldStyle())
